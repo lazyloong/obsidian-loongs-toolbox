@@ -1,0 +1,9 @@
+{
+    "id": "obsidian-loongs-toolbox",
+    "name": "Loong's toolbox",
+    "description": "",
+    "author": "lazyloong",
+
+    "minAppVersion": "0.11.0",
+    "version": "0.0.1"
+}
