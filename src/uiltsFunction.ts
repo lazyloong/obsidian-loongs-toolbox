@@ -4,8 +4,10 @@ import {
     Command,
     FrontMatterCache,
     HeadingCache,
+    Plugin_2,
     TAbstractFile,
     TFile,
+    WorkspaceLeaf,
 } from "obsidian";
 import ThePlugin from "./main";
 
@@ -13,9 +15,11 @@ export default class uiltsFunctions {
     api: any;
     plugin: ThePlugin;
     app: App;
+    plugins: Plugin_2[];
     constructor(plugin: ThePlugin) {
         this.plugin = plugin;
         this.app = this.plugin.app;
+        this.plugins = this.app.plugins.plugins;
         globalThis.loong = this;
     }
     unload() {
@@ -25,7 +29,7 @@ export default class uiltsFunctions {
         return this.app.vault.getAbstractFileByPath(path);
     }
     getLFile(path: string): LFile {
-        return new LFile(path, this.app);
+        return new LFile(path, this.plugin);
     }
     execCommand(command: string | Command): boolean {
         let id: string;
@@ -41,22 +45,25 @@ export default class uiltsFunctions {
 }
 
 class LFile {
-    tfile: TFile;
-    content: string;
-    dfile: any;
     app: App;
+    plugin: ThePlugin;
+    path: string;
+    tfile: TFile;
+    dfile: any;
+    content: string;
     headers: Headers;
     frontmatter: FrontMatterCache;
-    path: string;
     metadataCache: CachedMetadata;
-    constructor(path: string, app: App) {
-        this.app = app;
+    constructor(path: string, plugin: ThePlugin) {
+        this.plugin = plugin;
+        this.app = plugin.app;
         this.path = path;
         this.update();
     }
     async update() {
         this.tfile = app.vault.getAbstractFileByPath(this.path) as TFile;
-        if (globalThis.DataviewAPI) this.dfile = globalThis.DataviewAPI.page(this.path);
+        let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
+        if (api) this.dfile = api.page(this.path);
         if (!this.tfile) {
             this.path = this.dfile
                 ? this.dfile.file.path
@@ -64,15 +71,28 @@ class LFile {
             this.tfile = app.vault.getAbstractFileByPath(this.path) as TFile;
         }
         this.content = await this.app.vault.readRaw(this.path);
-        this.metadataCache = app.metadataCache.getFileCache(this.tfile);
+        this.updateMetadataCache();
         this.headers = new Headers(this);
-        this.frontmatter = this.metadataCache?.frontmatter;
     }
-    open() {
-        this.app.workspace.getMostRecentLeaf().openFile(this.tfile);
+    updateMetadataCache() {
+        this.metadataCache = this.app.metadataCache.getFileCache(this.tfile);
+        this.frontmatter = this.metadataCache?.frontmatter;
+        return this.metadataCache;
+    }
+    open(leaf?: WorkspaceLeaf) {
+        if (leaf) leaf.openFile(this.tfile);
+        else this.app.workspace.getMostRecentLeaf().openFile(this.tfile);
     }
     getHeadingContent(input: Heading | string | number, withOwnHeading = false) {
         return this.headers.getContent(input, withOwnHeading);
+    }
+    async updateFrontmatter(frontmatter: FrontMatterCache) {
+        await app.fileManager.processFrontMatter(this.tfile, (f) => {
+            let f_ = Object.assign({}, this.frontmatter, frontmatter);
+            Object.entries(f_).forEach(([k, v]) => (f[k] = v));
+        });
+        this.updateMetadataCache();
+        return this.frontmatter;
     }
 }
 

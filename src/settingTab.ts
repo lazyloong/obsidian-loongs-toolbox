@@ -17,6 +17,17 @@ export default class TheSettingTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
             });
         });
+        for (const [plugin, status] of Object.entries(this.plugin.auxiliaryPluginsAPI)) {
+            new Setting(containerEl).setName(plugin).addExtraButton((cb) => {
+                cb.setIcon(status ? "check" : "x");
+            });
+        }
+        new Setting(containerEl).setName("依赖插件状态").addButton((cb) => {
+            cb.setButtonText("更新").onClick(async () => {
+                this.plugin.updateAuxiliaryPluginsAPI();
+                this.display();
+            });
+        });
     }
 }
 
