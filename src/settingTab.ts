@@ -17,6 +17,17 @@ export default class TheSettingTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
             });
         });
+        new Setting(containerEl).setName("自定义 blockId 提示").addText((cb) => {
+            cb.setValue(this.plugin.settings.customBlockIdSuggest.join(", ")).onChange(
+                async (value) => {
+                    this.plugin.settings.customBlockIdSuggest = value
+                        .split(",")
+                        .map((v) => v.trim());
+                    this.plugin.blockIdEditorSuggest.updateItems();
+                    await this.plugin.saveSettings();
+                }
+            );
+        });
         for (const [plugin, status] of Object.entries(this.plugin.auxiliaryPluginsAPI)) {
             new Setting(containerEl).setName(plugin).addExtraButton((cb) => {
                 cb.setIcon(status ? "check" : "x");
@@ -33,8 +44,10 @@ export default class TheSettingTab extends PluginSettingTab {
 
 export interface TheSettings {
     copyPathMenuItem: boolean;
+    customBlockIdSuggest: string[];
 }
 
 export const DEFAULT_SETTINGS: TheSettings = {
     copyPathMenuItem: true,
+    customBlockIdSuggest: [],
 };

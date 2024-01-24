@@ -1,7 +1,8 @@
 import { Plugin, MarkdownRenderer, Notice } from "obsidian";
-import addCopyPathMenu from "./AddCopyPath";
+import addCopyPathMenu from "./addCopyPath";
 import uiltsFunctions from "./uiltsFunction";
 import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
+import BlockIdEditorSuggest from "./blockIdEditorSuggest";
 
 type AuxiliaryPluginsAPI = Record<"dataview", any>;
 
@@ -12,12 +13,16 @@ export default class ThePlugin extends Plugin {
     auxiliaryPluginsAPI: AuxiliaryPluginsAPI = {
         dataview: null,
     };
+    blockIdEditorSuggest: BlockIdEditorSuggest;
     async onload() {
         await this.loadSettings();
         this.updateAuxiliaryPluginsAPI();
         this.api = { MarkdownRenderer: MarkdownRenderer };
         addCopyPathMenu(this);
         this.uiltsFunctions = new uiltsFunctions(this);
+        this.uiltsFunctions.api = this.api;
+        this.blockIdEditorSuggest = new BlockIdEditorSuggest(this.app, this);
+        this.registerEditorSuggest(this.blockIdEditorSuggest);
         this.addSettingTab(new TheSettingTab(this));
     }
     updateAuxiliaryPluginsAPI() {
