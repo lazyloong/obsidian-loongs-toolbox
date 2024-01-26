@@ -6,15 +6,14 @@ export default function addCopyPathMenu(plugin: ThePlugin) {
         plugin.app.workspace.on(
             "file-menu",
             (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => {
-                if (plugin.settings.copyPathMenuItem)
-                    menu.addItem((item) => {
-                        item.setIcon("copy")
-                            .setTitle("复制路径")
-                            .onClick(() => {
-                                navigator.clipboard.writeText(file.path);
-                                new Notice("路径已复制", 1000);
-                            });
-                    });
+                menu.addItem((item) => {
+                    item.setIcon("copy")
+                        .setTitle("复制路径")
+                        .onClick(() => {
+                            navigator.clipboard.writeText(file.path);
+                            new Notice("路径已复制", 1000);
+                        });
+                });
             }
         )
     );

@@ -3,6 +3,7 @@ import addCopyPathMenu from "./addCopyPath";
 import uiltsFunctions from "./uiltsFunction";
 import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
 import BlockIdEditorSuggest from "./blockIdEditorSuggest";
+import { hijackingCanvasView } from "./viewEventHijacking";
 
 type AuxiliaryPluginsAPI = Record<"dataview", any>;
 
@@ -18,7 +19,8 @@ export default class ThePlugin extends Plugin {
         await this.loadSettings();
         this.updateAuxiliaryPluginsAPI();
         this.api = { MarkdownRenderer: MarkdownRenderer };
-        addCopyPathMenu(this);
+        if (this.settings.copyPathMenuItem) addCopyPathMenu(this);
+        hijackingCanvasView(this);
         this.uiltsFunctions = new uiltsFunctions(this);
         this.uiltsFunctions.api = this.api;
         this.blockIdEditorSuggest = new BlockIdEditorSuggest(this.app, this);
