@@ -1,4 +1,4 @@
-import { TFile, getIcon } from "obsidian";
+import { Notice, TFile, getIcon } from "obsidian";
 import { MatchData } from "./blockIdEditorSuggest";
 import sanitize from "sanitize-filename";
 import * as Path from "path";
@@ -68,4 +68,11 @@ export async function createFile(name: string, path: string) {
     let file = app.vault.getAbstractFileByPath(fullPath) as TFile;
     if (!file) file = await app.vault.create(fullPath, "");
     app.workspace.getMostRecentLeaf().openFile(file);
+}
+
+export function copy(text: string) {
+    navigator.clipboard.writeText(text).then(
+        () => new Notice("已复制到剪贴板：" + text, 1000),
+        () => new Notice("复制失败：" + text, 1000)
+    );
 }

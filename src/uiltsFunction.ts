@@ -16,15 +16,17 @@ import BiliFavlist from "./web/bilibili";
 import ZhihuFavlist from "./web/zhihu";
 import JuejinFavlist from "./web/juejin";
 import WebParser, { WebData, WebDataType } from "./web/webParser";
+import { PageMetadata, Literal } from "obsidian-dataview";
+
+type DFile = Record<string, Literal> & {
+    file: PageMetadata;
+};
 
 export default class uiltsFunctions {
-    api: any;
-    plugin: ThePlugin;
     app: App;
     webData: WebData;
     plugins: Plugin_2[];
-    constructor(plugin: ThePlugin) {
-        this.plugin = plugin;
+    constructor(public plugin: ThePlugin) {
         this.app = this.plugin.app;
         this.plugins = this.app.plugins.plugins;
         globalThis.loong = this;
@@ -54,10 +56,7 @@ export default class uiltsFunctions {
     }
     pages(query: string): LFile[] {
         let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
-        if (api)
-            return api
-                .pages(query)
-                .map((p: { file: { path: string } }) => this.getLFile(p.file.path));
+        if (api) return api.pages(query).map((p: DFile) => this.getLFile(p.file.path));
         else return;
     }
     pause(ms: number) {
@@ -85,7 +84,7 @@ class LFile {
     plugin: ThePlugin;
     path: string;
     tfile: TFile;
-    dfile: any;
+    dfile: DFile;
     content: string;
     headers: Headers;
     frontmatter: FrontMatterCache;
@@ -94,9 +93,9 @@ class LFile {
         this.plugin = plugin;
         this.app = plugin.app;
         this.path = path;
-        this.update();
+        this.init();
     }
-    async update() {
+    async init() {
         let tfile = getTAbstractFileByPathOrName(this.path);
         if (!tfile) {
             new Notice("没有这个文件", 2000);
@@ -111,10 +110,10 @@ class LFile {
         let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
         if (api) this.dfile = api.page(this.path);
         this.content = await this.app.vault.cachedRead(this.tfile);
-        this.updateMetadataCache();
+        this.getMetadataCache();
         this.headers = new Headers(this);
     }
-    updateMetadataCache() {
+    getMetadataCache() {
         this.metadataCache = this.app.metadataCache.getFileCache(this.tfile);
         this.frontmatter = this.metadataCache?.frontmatter;
         return this.metadataCache;
@@ -131,7 +130,7 @@ class LFile {
             let f_ = Object.assign({}, this.frontmatter, frontmatter);
             Object.entries(f_).forEach(([k, v]) => (f[k] = v));
         });
-        this.updateMetadataCache();
+        this.getMetadataCache();
         return this.frontmatter;
     }
     async rename(callback: (name: string) => string): Promise<void>;
@@ -228,15 +227,16 @@ class LFolder {
     app: App;
     tfolder: TFolder;
     tfiles: TFile[];
-    dfiles: any[];
+    dfiles: DFile[];
     direct_tfiles: TFile[];
+    direct_dfiles: DFile[];
     constructor(path: string, plugin: ThePlugin) {
         this.path = path;
         this.plugin = plugin;
         this.app = plugin.app;
-        this.update();
+        this.init();
     }
-    update() {
+    init() {
         let tfolder = getTAbstractFileByPathOrName(this.path);
         if (!tfolder) {
             new Notice("没有这个文件夹", 2000);
@@ -255,7 +255,10 @@ class LFolder {
                 .filter((f) => f.parent.path.startsWith(this.path));
         this.direct_tfiles = this.tfiles.filter((f) => f.parent.path == this.path);
         let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
-        if (api) this.dfiles = api.pages(`"${this.path}"`);
+        if (api) {
+            this.dfiles = api.pages(`"${this.path}"`);
+            this.direct_dfiles = this.dfiles.filter((f) => f.file.path == this.path);
+        }
     }
     async batchRename(callback: (name: string) => string): Promise<void>;
     async batchRename(callback: (name: string, folder: string) => [string, string]): Promise<void>;

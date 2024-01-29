@@ -1,41 +1,42 @@
-import { Plugin, MarkdownRenderer, Notice } from "obsidian";
+import { Plugin, Notice } from "obsidian";
 import addCopyPathMenu from "./addCopyPath";
 import uiltsFunctions from "./uiltsFunction";
 import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
 import BlockIdEditorSuggest from "./blockIdEditorSuggest";
 import { hijackingCanvasView } from "./viewEventHijacking";
 
-type AuxiliaryPluginsAPI = Record<"dataview", any>;
+export let auxiliaryPlugins: AuxiliaryPlugin[] = [
+    { id: "dataview", api: null, getApi: (p) => p.api },
+    { id: "obsidian-echarts", api: null, getApi: (p) => p },
+];
 
 export default class ThePlugin extends Plugin {
-    api: any;
     settings: TheSettings;
     uiltsFunctions: uiltsFunctions;
-    auxiliaryPluginsAPI: AuxiliaryPluginsAPI = {
-        dataview: null,
-    };
+    auxiliaryPlugins: Record<string, AuxiliaryPlugin> = {};
     blockIdEditorSuggest: BlockIdEditorSuggest;
     async onload() {
         await this.loadSettings();
         this.updateAuxiliaryPluginsAPI();
-        this.api = { MarkdownRenderer: MarkdownRenderer };
         if (this.settings.copyPathMenuItem) addCopyPathMenu(this);
         hijackingCanvasView(this);
         this.uiltsFunctions = new uiltsFunctions(this);
-        this.uiltsFunctions.api = this.api;
         this.blockIdEditorSuggest = new BlockIdEditorSuggest(this.app, this);
         this.registerEditorSuggest(this.blockIdEditorSuggest);
         this.addSettingTab(new TheSettingTab(this));
     }
     updateAuxiliaryPluginsAPI() {
-        let plugins = Object.keys(this.auxiliaryPluginsAPI);
-        for (const p of plugins) this.auxiliaryPluginsAPI[p] = this.app.plugins.getPlugin(p)?.api;
+        for (const p of auxiliaryPlugins) {
+            this.auxiliaryPlugins[p.id] = p;
+            let plugin: Plugin = this.app.plugins.getPlugin(p.id);
+            this.auxiliaryPlugins[p.id].api = p.getApi(plugin);
+        }
         new Notice("更新完成", 2000);
     }
-    getAuxiliaryPluginsAPI(plugin: string) {
-        if (this.auxiliaryPluginsAPI[plugin]) return this.auxiliaryPluginsAPI[plugin];
+    getAuxiliaryPluginsAPI(id: string) {
+        if (this.auxiliaryPlugins[id]) return this.auxiliaryPlugins[id].api;
         else {
-            new Notice(`没有 ${plugin} 插件`);
+            new Notice(`没有 ${id} 插件`);
             return null;
         }
     }
@@ -49,3 +50,9 @@ export default class ThePlugin extends Plugin {
         await this.saveData(this.settings);
     }
 }
+
+type AuxiliaryPlugin = {
+    readonly id: string;
+    api: any;
+    readonly getApi: (p: Plugin & { [K: string]: any }) => any;
+};

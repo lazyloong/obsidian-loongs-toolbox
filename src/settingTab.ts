@@ -1,5 +1,5 @@
 import { Setting, PluginSettingTab } from "obsidian";
-import ThePlugin from "./main";
+import ThePlugin, { auxiliaryPlugins } from "./main";
 import { WebDataType } from "./web/webParser";
 
 export default class TheSettingTab extends PluginSettingTab {
@@ -40,9 +40,9 @@ export default class TheSettingTab extends PluginSettingTab {
     addAuxiliaryPluginsAPI() {
         let { containerEl } = this;
         containerEl.createEl("h2", { text: "辅助插件 API" });
-        for (const [plugin, status] of Object.entries(this.plugin.auxiliaryPluginsAPI)) {
-            new Setting(containerEl).setName(plugin).addExtraButton((cb) => {
-                cb.setIcon(status ? "check" : "x");
+        for (const ap of auxiliaryPlugins) {
+            new Setting(containerEl).setName(ap.id).addExtraButton((cb) => {
+                cb.setIcon(this.plugin.auxiliaryPlugins[ap.id].api ? "check" : "x");
             });
         }
         new Setting(containerEl).setName("依赖插件状态").addButton((cb) => {
