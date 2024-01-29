@@ -12,11 +12,16 @@ import {
     WorkspaceLeaf,
 } from "obsidian";
 import ThePlugin from "./main";
+import BiliFavlist from "./web/bilibili";
+import ZhihuFavlist from "./web/zhihu";
+import JuejinFavlist from "./web/juejin";
+import WebParser, { WebData, WebDataType } from "./web/webParser";
 
 export default class uiltsFunctions {
     api: any;
     plugin: ThePlugin;
     app: App;
+    webData: WebData;
     plugins: Plugin_2[];
     constructor(plugin: ThePlugin) {
         this.plugin = plugin;
@@ -59,6 +64,19 @@ export default class uiltsFunctions {
         setTimeout(() => {
             debugger;
         }, ms);
+    }
+    getWebData(type: "bili", id: string): BiliFavlist;
+    getWebData(type: "zhihu", id: string): ZhihuFavlist;
+    getWebData(type: "juejin", id: string): JuejinFavlist;
+    getWebData(type: WebDataType, id: string): WebParser<WebData> {
+        switch (type) {
+            case "bili":
+                return new BiliFavlist(id, this.plugin);
+            case "zhihu":
+                return new ZhihuFavlist(id, this.plugin);
+            case "juejin":
+                return new JuejinFavlist(id, this.plugin);
+        }
     }
 }
 

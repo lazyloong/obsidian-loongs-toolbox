@@ -1,5 +1,7 @@
-import { SearchResult, getIcon } from "obsidian";
+import { TFile, getIcon } from "obsidian";
 import { MatchData } from "./blockIdEditorSuggest";
+import sanitize from "sanitize-filename";
+import * as Path from "path";
 
 export class SuggestionRenderer {
     containerEl: HTMLElement;
@@ -59,4 +61,11 @@ export class SuggestionRenderer {
             });
         this.flairEl.appendChild(getIcon(icon));
     }
+}
+
+export async function createFile(name: string, path: string) {
+    let fullPath = Path.join(path, sanitize(name) + ".md");
+    let file = app.vault.getAbstractFileByPath(fullPath) as TFile;
+    if (!file) file = await app.vault.create(fullPath, "");
+    app.workspace.getMostRecentLeaf().openFile(file);
 }
