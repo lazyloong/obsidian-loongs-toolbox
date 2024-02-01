@@ -1,6 +1,6 @@
-import ThePlugin from "../main";
+import ThePlugin from "main";
 import { DataviewInlineApi } from "obsidian-dataview/lib/api/inline-api";
-import Renderer from "./webDataRenderer";
+import Renderer from "web/webDataRenderer";
 
 export default abstract class WebParser<T extends WebData> {
     page_count: number = 10;

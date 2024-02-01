@@ -6,7 +6,11 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "moduleResolution": "node",
-        "forceConsistentCasingInFileNames": true
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": "src/",
+        "paths": {
+            "types": ["../types.d.ts"]
+        }
     },
     "include": ["src/**/*.ts", "types.d.ts"]
 }

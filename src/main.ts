@@ -6,8 +6,8 @@ import BlockIdEditorSuggest from "./blockIdEditorSuggest";
 import { hijackingCanvasView } from "./viewEventHijacking";
 
 export let auxiliaryPlugins: AuxiliaryPlugin[] = [
-    { id: "dataview", api: null, getApi: (p) => p.api },
-    { id: "obsidian-echarts", api: null, getApi: (p) => p },
+    { id: "dataview", getApi: (p) => p.api },
+    { id: "obsidian-echarts", getApi: (p) => p },
 ];
 
 export default class ThePlugin extends Plugin {
@@ -26,18 +26,23 @@ export default class ThePlugin extends Plugin {
         this.addSettingTab(new TheSettingTab(this));
     }
     updateAuxiliaryPluginsAPI() {
-        for (const p of auxiliaryPlugins) {
-            this.auxiliaryPlugins[p.id] = p;
-            let plugin: Plugin = this.app.plugins.getPlugin(p.id);
-            this.auxiliaryPlugins[p.id].api = p.getApi(plugin);
-        }
+        for (const p of auxiliaryPlugins) this.updateSingleAPI(p);
         new Notice("更新完成", 2000);
     }
+    updateSingleAPI(ap: AuxiliaryPlugin) {
+        this.auxiliaryPlugins[ap.id] = ap;
+        let plugin: Plugin = this.app.plugins.getPlugin(ap.id);
+        this.auxiliaryPlugins[ap.id].api = ap.getApi(plugin);
+        return this.auxiliaryPlugins[ap.id].api;
+    }
     getAuxiliaryPluginsAPI(id: string) {
-        if (this.auxiliaryPlugins[id]) return this.auxiliaryPlugins[id].api;
+        if (this.auxiliaryPlugins?.[id]?.api) return this.auxiliaryPlugins[id].api;
         else {
+            let ap = auxiliaryPlugins.find((p) => p.id === id);
+            let api = this.updateSingleAPI(ap);
+            if (api) return api;
             new Notice(`没有 ${id} 插件`);
-            return null;
+            return;
         }
     }
     async onunload() {
@@ -53,6 +58,6 @@ export default class ThePlugin extends Plugin {
 
 type AuxiliaryPlugin = {
     readonly id: string;
-    api: any;
     readonly getApi: (p: Plugin & { [K: string]: any }) => any;
+    api?: any;
 };

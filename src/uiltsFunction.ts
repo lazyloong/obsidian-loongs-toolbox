@@ -11,25 +11,27 @@ import {
     TFolder,
     WorkspaceLeaf,
 } from "obsidian";
-import ThePlugin from "./main";
-import BiliFavlist from "./web/bilibili";
-import ZhihuFavlist from "./web/zhihu";
-import JuejinFavlist from "./web/juejin";
-import WebParser, { WebData, WebDataType } from "./web/webParser";
-import { PageMetadata, Literal } from "obsidian-dataview";
-
-type DFile = Record<string, Literal> & {
-    file: PageMetadata;
-};
+import ThePlugin from "main";
+import BiliFavlist from "web/bilibili";
+import ZhihuFavlist from "web/zhihu";
+import JuejinFavlist from "web/juejin";
+import WebParser, { WebData, WebDataType } from "web/webParser";
+import { DFile } from "types";
+import { monthFileLine, yearFileLine } from "render/echarts";
 
 export default class uiltsFunctions {
     app: App;
     webData: WebData;
     plugins: Plugin_2[];
+    render: Record<string, Function>;
     constructor(public plugin: ThePlugin) {
+        globalThis.loong = this;
         this.app = this.plugin.app;
         this.plugins = this.app.plugins.plugins;
-        globalThis.loong = this;
+        this.render = {
+            yearFileLine: (a, b, c, d) => yearFileLine(a, b, c, d, plugin),
+            monthFileLine: (a, b, c, d, e) => monthFileLine(a, b, c, d, e, plugin),
+        };
     }
     unload() {
         delete globalThis.loong;
