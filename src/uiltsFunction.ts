@@ -18,6 +18,10 @@ import JuejinFavlist from "web/juejin";
 import WebParser, { WebData, WebDataType } from "web/webParser";
 import { DFile } from "types";
 import { monthFileLine, yearFileLine } from "render/echarts";
+import { SListItem } from "obsidian-dataview/lib/data-model/serialized/markdown";
+import { DataviewInlineApi } from "obsidian-dataview/lib/api/inline-api";
+import { DataArray, DataviewApi } from "obsidian-dataview";
+import { Grouping } from "obsidian-dataview/lib/data-model/value";
 
 export default class uiltsFunctions {
     app: App;
@@ -78,6 +82,9 @@ export default class uiltsFunctions {
             case "juejin":
                 return new JuejinFavlist(id, this.plugin);
         }
+    }
+    getDv(dv: DataviewInlineApi) {
+        return new DV(dv);
     }
 }
 
@@ -289,5 +296,31 @@ class LFolder {
             await callback(tfile);
         }
         new Notice("批量修改完成", 2000);
+    }
+}
+
+class DV {
+    api: DataviewApi;
+    constructor(public dv: DataviewInlineApi) {
+        this.api = dv.api;
+    }
+    paragraph(text: any, container: HTMLElement) {
+        // @ts-ignore
+        return this.dv.paragraph(text, { container });
+    }
+    table(headers: string[], values: any[][] | DataArray<any>, el: HTMLElement) {
+        return this.api.table(headers, values, el, this.dv.component, this.dv.currentFilePath);
+    }
+    list(values: any[] | DataArray<any>, container: HTMLElement) {
+        return this.api.list(values, container, this.dv.component, this.dv.currentFilePath);
+    }
+    taskList(tasks: Grouping<SListItem>, groupByFile: boolean, container: HTMLElement) {
+        return this.api.taskList(
+            tasks,
+            groupByFile,
+            container,
+            this.dv.component,
+            this.dv.currentFilePath
+        );
     }
 }
