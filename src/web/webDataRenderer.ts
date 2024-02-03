@@ -17,10 +17,11 @@ export default class Renderer<T extends WebData> {
         this.parser = parser;
         this.headers = headers;
         this.values = values;
-        this.max_page = Math.ceil(this.parser.max_num / this.limit);
         this.containerEl = dv.container.createEl("div");
     }
-    render(limit = 10) {
+    async render(limit = 10) {
+        if (this.parser.data.length === 0) await this.parser.addNextPageData();
+        this.max_page = Math.ceil(this.parser.max_num / this.limit);
         let { dv } = this;
         this.limit = limit;
         let api: DataviewApi = dv.api;
@@ -62,6 +63,16 @@ export default class Renderer<T extends WebData> {
         });
         nextButton.style.margin = "10px";
         nextButton.textContent = "下一页";
+
+        let refreshButton = this.containerEl.createEl("button");
+        refreshButton.addEventListener("click", async () => {
+            this.parser.clear();
+            this.page = 1;
+            this.max_page = Math.ceil(this.parser.max_num / this.limit);
+            this.render();
+        });
+        refreshButton.style.margin = "10px";
+        refreshButton.textContent = "刷新";
 
         this.containerEl.createSpan({
             text: `第 ${this.page}/${this.max_page} 页\t每页 ${this.limit} 个\t共 ${this.parser.max_num} 个`,

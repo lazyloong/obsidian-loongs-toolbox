@@ -42,7 +42,11 @@ export async function yearFileLine(
                     color: "#ffffff",
                     position: "top", // 标签的位置在顶部
                     formatter: (params) => {
-                        if (parseInt(params.name) - 1 > moment().month())
+                        if (
+                            (year == moment().year() &&
+                                parseInt(params.name) - 1 > moment().month()) ||
+                            year > moment().year()
+                        )
                             return `{no|${params.data}}`;
                         return params.data;
                     },
@@ -83,7 +87,7 @@ export async function monthFileLine(
     let f = files
         .filter((p) => p.date && p.date.year == year && p.date.month == month + 1)
         .groupBy((p) => p.date.day);
-    let group_files = [];
+    let group_files: any[][] = [];
     for (let i of f) {
         data[i.key - 1] = i.rows.length;
         group_files[i.key - 1] = i.rows;
@@ -114,7 +118,12 @@ export async function monthFileLine(
                     color: "#ffffff",
                     position: "top", // 标签的位置在顶部
                     formatter: (params) => {
-                        if (parseInt(params.name) > moment().date()) return `{no|${params.data}}`;
+                        if (
+                            (month == moment().month() &&
+                                parseInt(params.name) > moment().date()) ||
+                            month > moment().month()
+                        )
+                            return `{no|${params.data}}`;
                         return params.data;
                     },
                     rich: {
@@ -128,15 +137,29 @@ export async function monthFileLine(
     };
     let chart = await api.render(option, container);
     let fileDiv = container.createDiv();
+    let dv_ = loong.getDv(dv);
+    dv_.paragraph(
+        `${month + 1} 月 ${moment().date()} 日，共有 **${
+            group_files[moment().date() - 1]?.length ?? 0
+        }** 个文件`,
+        fileDiv
+    );
+    dv_.list(
+        group_files[moment().date() - 1]?.map((p) => p.file.link),
+        fileDiv
+    );
     chart.chart.on("click", (p) => {
         fileDiv.empty();
-        // @ts-ignore
-        dv.paragraph(`${month + 1} 月 ${p.dataIndex + 1} 日`, { container: fileDiv });
-        dv.api.list(
-            group_files[p.dataIndex].map((p) => p.file.link),
-            fileDiv,
-            dv.component,
-            dv.currentFilePath
+        console.log(group_files, group_files[p.dataIndex]);
+        dv_.paragraph(
+            `${month + 1} 月 ${p.dataIndex + 1} 日，共有 **${
+                group_files[p.dataIndex]?.length ?? 0
+            }** 个文件`,
+            fileDiv
+        );
+        dv_.list(
+            group_files[p.dataIndex]?.map((p) => p.file.link),
+            fileDiv
         );
     });
     return chart;

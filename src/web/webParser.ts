@@ -29,7 +29,6 @@ export default abstract class WebParser<T extends WebData> {
     render(dv: DataviewInlineApi, headers: string[]): void;
     render(dv: DataviewInlineApi, headers: string[], values: string[]): void;
     async render(dv: DataviewInlineApi, headers?: string[], values?: string[]) {
-        if (this.data.length === 0) await this.addNextPageData();
         if (!headers) {
             headers = this.default_headers;
             values = this.default_values;
@@ -37,6 +36,11 @@ export default abstract class WebParser<T extends WebData> {
             values = headers;
         }
         new Renderer(dv, this, headers, values).render();
+    }
+    clear() {
+        this.data = [];
+        this.current_page = 0;
+        this.max_num = null;
     }
 }
 
