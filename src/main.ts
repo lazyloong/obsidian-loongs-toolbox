@@ -4,8 +4,20 @@ import uiltsFunctions from "./uiltsFunction";
 import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
 import BlockIdEditorSuggest from "./blockIdEditorSuggest";
 import { hijackingCanvasView, hijackingEmptyView, d } from "./viewEventHijacking";
+import { DataviewApi } from "obsidian-dataview";
 
-export let auxiliaryPlugins: AuxiliaryPlugin[] = [
+type AuxiliaryPlugin<T extends keyof PluginApiMap> = {
+    readonly id: T;
+    readonly getApi: (p: Plugin & { [K: string]: any }) => PluginApiMap[T];
+    api?: PluginApiMap[T];
+};
+
+type PluginApiMap = {
+    dataview: DataviewApi;
+    "obsidian-echarts": any;
+};
+
+export let auxiliaryPlugins: Array<AuxiliaryPlugin<keyof PluginApiMap>> = [
     { id: "dataview", getApi: (p) => p.api },
     { id: "obsidian-echarts", getApi: (p) => p },
 ];
@@ -13,7 +25,7 @@ export let auxiliaryPlugins: AuxiliaryPlugin[] = [
 export default class ThePlugin extends Plugin {
     settings: TheSettings;
     uiltsFunctions: uiltsFunctions;
-    auxiliaryPlugins: Record<string, AuxiliaryPlugin> = {};
+    auxiliaryPlugins: Record<string, AuxiliaryPlugin<keyof PluginApiMap>> = {};
     blockIdEditorSuggest: BlockIdEditorSuggest;
     async onload() {
         await this.loadSettings();
@@ -30,13 +42,13 @@ export default class ThePlugin extends Plugin {
         for (const p of auxiliaryPlugins) this.updateSingleAPI(p);
         new Notice("更新完成", 2000);
     }
-    updateSingleAPI(ap: AuxiliaryPlugin) {
+    updateSingleAPI(ap: AuxiliaryPlugin<keyof PluginApiMap>) {
         this.auxiliaryPlugins[ap.id] = ap;
         let plugin: Plugin = this.app.plugins.getPlugin(ap.id);
         this.auxiliaryPlugins[ap.id].api = ap.getApi(plugin);
         return this.auxiliaryPlugins[ap.id].api;
     }
-    getAuxiliaryPluginsAPI(id: string) {
+    getAuxiliaryPluginsAPI<T extends keyof PluginApiMap>(id: T): PluginApiMap[T] {
         if (this.auxiliaryPlugins?.[id]?.api) return this.auxiliaryPlugins[id].api;
         else {
             let ap = auxiliaryPlugins.find((p) => p.id === id);
@@ -56,9 +68,3 @@ export default class ThePlugin extends Plugin {
         await this.saveData(this.settings);
     }
 }
-
-type AuxiliaryPlugin = {
-    readonly id: string;
-    readonly getApi: (p: Plugin & { [K: string]: any }) => any;
-    api?: any;
-};

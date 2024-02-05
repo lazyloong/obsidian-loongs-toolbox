@@ -88,7 +88,8 @@ export default class Renderer<T extends WebData> {
                     loong.webData = p;
                     let type = this.parser.type;
                     let path = loong.plugin.settings.newFileLocation[type];
-                    await createFile(p.title, path);
+                    let file = await createFile(p.title, path);
+                    app.workspace.getMostRecentLeaf().openFile(file);
                 });
                 return div;
             case "link":

@@ -63,11 +63,15 @@ export class SuggestionRenderer {
     }
 }
 
-export async function createFile(name: string, path: string) {
+export async function createFile(
+    name: string,
+    path: string = app.fileManager.getNewFileParent("").path,
+    content: string = ""
+) {
     let fullPath = Path.join(path, sanitize(name) + ".md");
     let file = app.vault.getAbstractFileByPath(fullPath) as TFile;
-    if (!file) file = await app.vault.create(fullPath, "");
-    app.workspace.getMostRecentLeaf().openFile(file);
+    if (!file) file = await app.vault.create(fullPath, content);
+    return file;
 }
 
 export function copy(text: string) {

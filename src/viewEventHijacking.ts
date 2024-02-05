@@ -52,7 +52,7 @@ export function hijackingEmptyView(leaf: WorkspaceLeaf) {
     let temBtn = actionListEl.children[3].cloneNode() as HTMLElement;
     temBtn.innerText = "打开主页";
     temBtn.addEventListener("click", (e) => {
-        leaf.openFile(loong.getTFile("管理面板.canvas") as TFile);
+        leaf.openFile(loong.file.getTFile("管理面板.canvas") as TFile);
     });
     actionListEl.children[3].replaceWith(temBtn);
     // actionListEl.appendChild(temBtn);

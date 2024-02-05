@@ -22,16 +22,21 @@ import { SListItem } from "obsidian-dataview/lib/data-model/serialized/markdown"
 import { DataviewInlineApi } from "obsidian-dataview/lib/api/inline-api";
 import { DataArray, DataviewApi } from "obsidian-dataview";
 import { Grouping } from "obsidian-dataview/lib/data-model/value";
+import { createFile } from "uilts";
+
+type MaybeArray<T> = T | T[];
 
 export default class uiltsFunctions {
     app: App;
     webData: WebData;
     plugins: Plugin_2[];
     render: Record<string, Function>;
+    file: FileTools;
     constructor(public plugin: ThePlugin) {
         globalThis.loong = this;
         this.app = this.plugin.app;
         this.plugins = this.app.plugins.plugins;
+        this.file = new FileTools(this.plugin);
         this.render = {
             yearFileLine: (a, b, c, d) => yearFileLine(a, b, c, d, plugin),
             monthFileLine: (a, b, c, d, e) => monthFileLine(a, b, c, d, e, plugin),
@@ -39,15 +44,6 @@ export default class uiltsFunctions {
     }
     unload() {
         delete globalThis.loong;
-    }
-    getTFile(path: string): TAbstractFile {
-        return getTAbstractFileByPathOrName(path);
-    }
-    getLFolder(path: string): LFolder {
-        return new LFolder(path, this.plugin);
-    }
-    getLFile(path: string): LFile {
-        return new LFile(path, this.plugin);
     }
     execCommand(command: string | Command): boolean {
         let id: string;
@@ -59,11 +55,6 @@ export default class uiltsFunctions {
     getCommand(command: string): Command {
         if (this.app.commands.commands[command]) return this.app.commands.commands[command];
         else return Object.entries(this.app.commands.commands).find((c) => c[1].name == command)[1];
-    }
-    pages(query: string): LFile[] {
-        let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
-        if (api) return api.pages(query).map((p: DFile) => this.getLFile(p.file.path));
-        else return;
     }
     pause(ms: number) {
         setTimeout(() => {
@@ -87,6 +78,101 @@ export default class uiltsFunctions {
         return new DV(dv);
     }
 }
+
+class FileTools {
+    constructor(public plugin: ThePlugin) {}
+    getFile(path: string, type: "l" | "d" | "t" = "l") {
+        switch (type) {
+            case "l":
+                return this.getLFile(path);
+            case "d":
+                return this.getDFile(path);
+            case "t":
+                return this.getTFile(path);
+        }
+    }
+    getTFile(path: string): TAbstractFile {
+        return getTAbstractFileByPathOrName(path);
+    }
+    getDFile(path: string): DFile {
+        let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
+        if (api) return api.pages(path);
+    }
+    getLFile(path: string): LFile {
+        return new LFile(path, this.plugin);
+    }
+    getLFolder(path: string): LFolder {
+        return new LFolder(path, this.plugin);
+    }
+    getFileGroup(files: File[]): FileGroup {
+        let files_ = files.map(this.toT);
+        return new FileGroup(files_);
+    }
+    pages(query: string): LFile[] {
+        let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
+        if (api) return api.pages(query).map(this.toL).array();
+    }
+    toT(file: File): TFile {
+        let l2t = (l: LFile) => l.tfile;
+        let d2t = (d: DFile) => getTAbstractFileByPathOrName(d.file.path) as TFile;
+        if (isLfile(file)) return l2t(file);
+        else if (isDfile(file)) return d2t(file);
+        else return file;
+    }
+    toL(file: File): LFile {
+        let t2l = (t: TFile) => this.getLFile(t.path);
+        let d2l = (d: DFile) => this.getLFile(d.file.path);
+        if (isTfile(file)) return t2l(file);
+        else if (isDfile(file)) return d2l(file);
+        else return file;
+    }
+    toD(file: File): DFile {
+        if (isDfile(file)) return file;
+        else return this.getDFile(file.path);
+    }
+    async rename(file: File, callback: (name: string) => string): Promise<void>;
+    async rename(
+        file: File,
+        callback: (name: string, folder: string) => [string, string]
+    ): Promise<void>;
+    async rename(file: File, callback: Function): Promise<void> {
+        let tfile = this.toT(file);
+        if (callback.length == 1) {
+            let newName = callback(tfile.name);
+            await app.fileManager.renameFile(tfile, `${tfile.parent.path}/${newName}`);
+        } else if (callback.length == 2) {
+            let [newName, newFolder] = callback(tfile.name, tfile.parent.path);
+            await app.fileManager.renameFile(tfile, `${newFolder}/${newName}`);
+        }
+    }
+    async create(
+        name: string,
+        path: string = app.fileManager.getNewFileParent("").path,
+        content: string = ""
+    ): Promise<TFile> {
+        return await createFile(name, path, content);
+    }
+    async modify(file: File, content: string) {
+        await app.vault.modify(this.toT(file), content);
+    }
+    async delete(file: File) {
+        await app.vault.trash(this.toT(file), true);
+    }
+    open(file: File, leaf: WorkspaceLeaf = app.workspace.getMostRecentLeaf()) {
+        leaf.openFile(this.toT(file));
+    }
+}
+function isLfile(file: File): file is LFile {
+    return file instanceof LFile;
+}
+function isTfile(file: File): file is TFile {
+    return file instanceof TFile;
+}
+function isDfile(file: File): file is DFile {
+    return Boolean((file as DFile)?.file?.name);
+}
+
+type File = TFile | LFile | DFile;
 
 class LFile {
     app: App;
@@ -127,9 +213,8 @@ class LFile {
         this.frontmatter = this.metadataCache?.frontmatter;
         return this.metadataCache;
     }
-    open(leaf?: WorkspaceLeaf) {
-        if (leaf) leaf.openFile(this.tfile);
-        else this.app.workspace.getMostRecentLeaf().openFile(this.tfile);
+    open(leaf: WorkspaceLeaf = this.app.workspace.getMostRecentLeaf()) {
+        leaf.openFile(this.tfile);
     }
     getHeadingContent(input: Heading | string | number, withOwnHeading = false) {
         return this.headers.getContent(input, withOwnHeading);
@@ -142,20 +227,8 @@ class LFile {
         this.getMetadataCache();
         return this.frontmatter;
     }
-    async rename(callback: (name: string) => string): Promise<void>;
-    async rename(callback: (name: string, folder: string) => [string, string]): Promise<void>;
-    async rename(callback: Function): Promise<void> {
-        if (callback.length == 1) {
-            let newName = callback(this.tfile.name);
-            await this.app.fileManager.renameFile(
-                this.tfile,
-                `${this.tfile.parent.path}/${newName}`
-            );
-        } else if (callback.length == 2) {
-            let [newName, newFolder] = callback(this.tfile.path, this.path);
-            newFolder = this.tfile.parent.parent.path.replace(this.path, newFolder);
-            await this.app.fileManager.renameFile(this.tfile, `${newFolder}/${newName}`);
-        }
+    async rename(callback: any) {
+        await loong.file.rename(this.tfile, callback);
     }
 }
 
@@ -230,6 +303,28 @@ function getTAbstractFileByPathOrName(pathOrName: string): TAbstractFile {
     return file;
 }
 
+class FileGroup {
+    constructor(public tfiles: TFile[]) {}
+    async batchRename(callback: any): Promise<void> {
+        for (const tfile of this.tfiles) await loong.file.rename(tfile, callback);
+        new Notice("批量重命名完成", 2000);
+    }
+    async batchUpdateMetadataCache(k: string | number, v: any) {
+        for (const tfile of this.tfiles) {
+            await app.fileManager.processFrontMatter(tfile, (f) => {
+                f[k] = v;
+            });
+        }
+        new Notice("批量修改完成", 2000);
+    }
+    async batchModify(callback: (file: TFile) => void | Promise<void>): Promise<void> {
+        for (const tfile of this.tfiles) {
+            await callback(tfile);
+        }
+        new Notice("批量修改完成", 2000);
+    }
+}
+
 class LFolder {
     plugin: ThePlugin;
     path: string;
@@ -239,6 +334,7 @@ class LFolder {
     dfiles: DFile[];
     direct_tfiles: TFile[];
     direct_dfiles: DFile[];
+    file_groups: FileGroup;
     constructor(path: string, plugin: ThePlugin) {
         this.path = path;
         this.plugin = plugin;
@@ -263,39 +359,23 @@ class LFolder {
                 .getMarkdownFiles()
                 .filter((f) => f.parent.path.startsWith(this.path));
         this.direct_tfiles = this.tfiles.filter((f) => f.parent.path == this.path);
+        this.file_groups = new FileGroup(this.tfiles);
         let api = this.plugin.getAuxiliaryPluginsAPI("dataview");
         if (api) {
-            this.dfiles = api.pages(`"${this.path}"`);
+            this.dfiles = api.pages(`"${this.path}"`).array();
             this.direct_dfiles = this.dfiles.filter((f) => f.file.path == this.path);
         }
     }
     async batchRename(callback: (name: string) => string): Promise<void>;
     async batchRename(callback: (name: string, folder: string) => [string, string]): Promise<void>;
-    async batchRename(callback: Function): Promise<void> {
-        for (const tfile of this.tfiles) {
-            if (callback.length == 1) {
-                let newName = callback(tfile.name);
-                await this.app.fileManager.renameFile(tfile, `${tfile.parent.path}/${newName}`);
-            } else if (callback.length == 2) {
-                let [newName, newFolder] = callback(tfile.path, this.path);
-                newFolder = tfile.parent.parent.path.replace(this.path, newFolder);
-                await this.app.fileManager.renameFile(tfile, `${newFolder}/${newName}`);
-            }
-        }
-        new Notice("批量重命名完成", 2000);
+    async batchRename(callback: any): Promise<void> {
+        await this.file_groups.batchRename(callback);
     }
     async batchUpdateMetadataCache(k: string | number, v: any) {
-        for (const tfile of this.tfiles) {
-            await app.fileManager.processFrontMatter(tfile, (f) => {
-                f[k] = v;
-            });
-        }
+        await this.file_groups.batchUpdateMetadataCache(k, v);
     }
     async batchModify(callback: (file: TFile) => void | Promise<void>): Promise<void> {
-        for (const tfile of this.tfiles) {
-            await callback(tfile);
-        }
-        new Notice("批量修改完成", 2000);
+        await this.file_groups.batchModify(callback);
     }
 }
 
