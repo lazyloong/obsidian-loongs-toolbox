@@ -150,7 +150,6 @@ export async function monthFileLine(
     );
     chart.chart.on("click", (p) => {
         fileDiv.empty();
-        console.log(group_files, group_files[p.dataIndex]);
         dv_.paragraph(
             `${month + 1} 月 ${p.dataIndex + 1} 日，共有 **${
                 group_files[p.dataIndex]?.length ?? 0

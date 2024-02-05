@@ -3,7 +3,7 @@ import addCopyPathMenu from "./addCopyPath";
 import uiltsFunctions from "./uiltsFunction";
 import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
 import BlockIdEditorSuggest from "./blockIdEditorSuggest";
-import { hijackingCanvasView } from "./viewEventHijacking";
+import { hijackingCanvasView, hijackingEmptyView, d } from "./viewEventHijacking";
 
 export let auxiliaryPlugins: AuxiliaryPlugin[] = [
     { id: "dataview", getApi: (p) => p.api },
@@ -19,7 +19,8 @@ export default class ThePlugin extends Plugin {
         await this.loadSettings();
         this.updateAuxiliaryPluginsAPI();
         if (this.settings.copyPathMenuItem) addCopyPathMenu(this);
-        hijackingCanvasView(this);
+        d(this)(hijackingCanvasView);
+        d(this)(hijackingEmptyView);
         this.uiltsFunctions = new uiltsFunctions(this);
         this.blockIdEditorSuggest = new BlockIdEditorSuggest(this.app, this);
         this.registerEditorSuggest(this.blockIdEditorSuggest);
