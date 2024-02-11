@@ -1,5 +1,5 @@
 import { Notice, TFile, getIcon } from "obsidian";
-import { MatchData } from "./blockIdEditorSuggest";
+import { MatchData } from "./editorSuggest/blockIdEditorSuggest";
 import sanitize from "sanitize-filename";
 import * as Path from "path";
 

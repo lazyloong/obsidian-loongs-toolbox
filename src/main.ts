@@ -2,7 +2,8 @@ import { Plugin, Notice } from "obsidian";
 import addCopyPathMenu from "./addCopyPath";
 import uiltsFunctions from "./uiltsFunction";
 import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
-import BlockIdEditorSuggest from "./blockIdEditorSuggest";
+import BlockIdEditorSuggest from "./editorSuggest/blockIdEditorSuggest";
+import CodeBlockEditorSuggest from "editorSuggest/codeBlockEditorSuggest";
 import { hijackingCanvasView, hijackingEmptyView, d } from "./viewEventHijacking";
 import { DataviewApi } from "obsidian-dataview";
 
@@ -27,6 +28,7 @@ export default class ThePlugin extends Plugin {
     uiltsFunctions: uiltsFunctions;
     auxiliaryPlugins: Record<string, AuxiliaryPlugin<keyof PluginApiMap>> = {};
     blockIdEditorSuggest: BlockIdEditorSuggest;
+    codeBlockEditorSuggest: CodeBlockEditorSuggest;
     async onload() {
         await this.loadSettings();
         this.updateAuxiliaryPluginsAPI();
@@ -35,7 +37,9 @@ export default class ThePlugin extends Plugin {
         d(this)(hijackingEmptyView);
         this.uiltsFunctions = new uiltsFunctions(this);
         this.blockIdEditorSuggest = new BlockIdEditorSuggest(this.app, this);
+        this.codeBlockEditorSuggest = new CodeBlockEditorSuggest(this.app, this);
         this.registerEditorSuggest(this.blockIdEditorSuggest);
+        this.registerEditorSuggest(this.codeBlockEditorSuggest);
         this.addSettingTab(new TheSettingTab(this));
     }
     updateAuxiliaryPluginsAPI() {

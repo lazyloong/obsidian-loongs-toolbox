@@ -9,6 +9,7 @@ import {
     TAbstractFile,
     TFile,
     TFolder,
+    TagCache,
     WorkspaceLeaf,
 } from "obsidian";
 import ThePlugin from "main";
@@ -21,10 +22,7 @@ import { monthFileLine, yearFileLine } from "render/echarts";
 import { SListItem } from "obsidian-dataview/lib/data-model/serialized/markdown";
 import { DataviewInlineApi } from "obsidian-dataview/lib/api/inline-api";
 import { DataArray, DataviewApi } from "obsidian-dataview";
-import { Grouping } from "obsidian-dataview/lib/data-model/value";
 import { createFile } from "uilts";
-
-type MaybeArray<T> = T | T[];
 
 export default class uiltsFunctions {
     app: App;
@@ -182,6 +180,7 @@ class LFile {
     dfile: DFile;
     content: string;
     headers: Headers;
+    tagcontent: TagContent;
     frontmatter: FrontMatterCache;
     metadataCache: CachedMetadata;
     constructor(path: string, plugin: ThePlugin) {
@@ -207,6 +206,8 @@ class LFile {
         this.content = await this.app.vault.cachedRead(this.tfile);
         this.getMetadataCache();
         this.headers = new Headers(this);
+        this.tagcontent = new TagContent(this);
+        return this;
     }
     getMetadataCache() {
         this.metadataCache = this.app.metadataCache.getFileCache(this.tfile);
@@ -293,6 +294,51 @@ type HeadingTree = HeadingCache & {
     children: HeadingTree[];
 };
 type Heading = HeadingCache | HeadingTree;
+
+class TagContent {
+    content: string;
+    tags: TagCache[];
+    tagParagraphs: Record<string, string[]> = {};
+    tagLines: Record<string, string[]> = {};
+    constructor(public file: LFile) {
+        this.content = this.file.content;
+        this.tags = this.file.metadataCache?.tags;
+        if (!this.tags || !this.file.metadataCache?.sections) return;
+        this.tags.forEach((t) => {
+            this.tagParagraphs[t.tag] = [];
+            this.tagLines[t.tag] = [];
+        });
+        this.init();
+    }
+    init() {
+        let paragraphs = this.file.metadataCache.sections.filter((s) => s.type === "paragraph");
+        this.tags.forEach((t) => {
+            this.tagLines[t.tag].push(this.content.split("\n")[t.position.start.line]);
+            const paragraph = paragraphs.find(
+                (p) =>
+                    p.position.start.line <= t.position.start.line &&
+                    t.position.end.line <= p.position.end.line
+            );
+            let { start, end } = paragraph.position;
+            this.tagParagraphs[t.tag].push(this.content.slice(start.offset, end.offset));
+        });
+    }
+    render(
+        dv: DataviewInlineApi,
+        withLines: boolean = true,
+        container: HTMLElement = dv.container
+    ) {
+        const dv_ = loong.getDv(dv);
+        let temp = withLines ? this.tagLines : this.tagParagraphs;
+        let c = Object.entries(temp);
+        let d = c.map(([k, v]) => {
+            let div = container.createDiv();
+            dv_.list(v, div);
+            return [k.slice(1), div];
+        });
+        dv.table(["tag", "内容"], d);
+    }
+}
 
 function getTAbstractFileByPathOrName(pathOrName: string): TAbstractFile {
     let file = app.vault.getAbstractFileByPath(pathOrName);
@@ -394,7 +440,25 @@ class DV {
     list(values: any[] | DataArray<any>, container: HTMLElement) {
         return this.api.list(values, container, this.dv.component, this.dv.currentFilePath);
     }
-    taskList(tasks: Grouping<SListItem>, groupByFile: boolean, container: HTMLElement) {
+    taskList(
+        tasks: DataArray<SListItem>,
+        groupByFile: boolean,
+        container: HTMLElement,
+        sort = (t: DFile) => t.file.name
+    ) {
+        if (groupByFile)
+            tasks
+                .groupBy((p) => p.path)
+                .sort((p) => sort(this.dv.page(p.key)))
+                .forEach((p) => {
+                    this.api.taskList(
+                        p.rows,
+                        false,
+                        container,
+                        this.dv.component,
+                        this.dv.currentFilePath
+                    );
+                });
         return this.api.taskList(
             tasks,
             groupByFile,

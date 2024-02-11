@@ -36,6 +36,17 @@ export default class TheSettingTab extends PluginSettingTab {
                 }
             );
         });
+        new Setting(containerEl).setName("自定义代码块标签提示").addText((cb) => {
+            cb.setValue(this.plugin.settings.customCodeBlockSuggest.join(", ")).onChange(
+                async (value) => {
+                    this.plugin.settings.customCodeBlockSuggest = value
+                        .split(",")
+                        .map((v) => v.trim());
+                    this.plugin.codeBlockEditorSuggest.updateItems();
+                    await this.plugin.saveSettings();
+                }
+            );
+        });
     }
     addAuxiliaryPluginsAPI() {
         let { containerEl } = this;
@@ -73,12 +84,14 @@ export default class TheSettingTab extends PluginSettingTab {
 export interface TheSettings {
     copyPathMenuItem: boolean;
     customBlockIdSuggest: string[];
+    customCodeBlockSuggest: string[];
     newFileLocation: { [p in WebDataType]: string };
 }
 
 export const DEFAULT_SETTINGS: TheSettings = {
-    copyPathMenuItem: true,
+    copyPathMenuItem: false,
     customBlockIdSuggest: [],
+    customCodeBlockSuggest: [],
     newFileLocation: {
         bili: app.fileManager.getNewFileParent("").path,
         zhihu: app.fileManager.getNewFileParent("").path,

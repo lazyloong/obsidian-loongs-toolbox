@@ -23,7 +23,7 @@ export function hijackingCanvasView(leaf: WorkspaceLeaf) {
     canvas.dirty.forEach((p) => {
         if (!p.file) return;
         p.nodeEl.addEventListener("click", (e) => {
-            if (!e.ctrlKey) return;
+            if (!e.altKey) return;
             e.stopPropagation();
             let leaf = app.workspace.getLeaf("tab");
             leaf.openFile(p.file);

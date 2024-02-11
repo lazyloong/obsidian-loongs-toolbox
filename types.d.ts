@@ -1,8 +1,8 @@
 import uiltsFunctions from "./src/uiltsFunction";
-import { PageMetadata, Literal } from "obsidian-dataview";
+import { PageMetadata, Literal, DataObject } from "obsidian-dataview";
 import moment from "moment";
 
-interface DFile extends Record<string, Literal> {
+interface DFile extends DataObject {
     file?: PageMetadata;
 }
 
