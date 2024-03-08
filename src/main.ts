@@ -1,11 +1,11 @@
 import { Plugin, Notice } from "obsidian";
-import addCopyPathMenu from "./addCopyPath";
-import uiltsFunctions from "./uiltsFunction";
-import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "./settingTab";
-import BlockIdEditorSuggest from "./editorSuggest/blockIdEditorSuggest";
-import CodeBlockEditorSuggest from "editorSuggest/codeBlockEditorSuggest";
-import { hijackingCanvasView, hijackingEmptyView, d } from "./viewEventHijacking";
 import { DataviewApi } from "obsidian-dataview";
+import TheSettingTab, { DEFAULT_SETTINGS, TheSettings } from "settingTab";
+import addCopyPathMenu from "addCopyPath";
+import uiltsFunctions from "uiltsFunction";
+import BlockIdEditorSuggest from "editorSuggest/blockIdEditorSuggest";
+import CodeBlockEditorSuggest from "editorSuggest/codeBlockEditorSuggest";
+import { hijackingCanvasView, hijackingEmptyView, d } from "viewEventHijacking";
 
 type AuxiliaryPlugin<T extends keyof PluginApiMap> = {
     readonly id: T;

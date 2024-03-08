@@ -7,7 +7,7 @@
         "skipLibCheck": true,
         "moduleResolution": "node",
         "forceConsistentCasingInFileNames": true,
-        "baseUrl": "src/",
+        "baseUrl": "./src/",
         "paths": {
             "types": ["../types.d.ts"]
         }

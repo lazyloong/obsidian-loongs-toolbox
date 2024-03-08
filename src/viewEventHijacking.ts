@@ -1,5 +1,5 @@
 import { TFile, View, WorkspaceLeaf } from "obsidian";
-import ThePlugin from "./main";
+import ThePlugin from "main";
 
 interface CanvasView extends View {
     file: TFile;

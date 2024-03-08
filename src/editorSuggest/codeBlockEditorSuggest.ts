@@ -5,13 +5,12 @@ import {
     EditorSuggest,
     EditorSuggestContext,
     EditorSuggestTriggerInfo,
-    SearchResult,
     TFile,
     fuzzySearch,
     prepareQuery,
 } from "obsidian";
-import ThePlugin from "../main";
-import { SuggestionRenderer } from "../uilts";
+import ThePlugin from "main";
+import { MatchData, SuggestionRenderer } from "uilts";
 
 const Code_Block_Label = [
     "autohotkey",
@@ -61,10 +60,6 @@ const Code_Block_Label = [
     "wiki",
     "yaml",
 ];
-
-export interface MatchData extends SearchResult {
-    text: string;
-}
 
 export default class CodeBlockEditorSuggest extends EditorSuggest<MatchData> {
     plugin: ThePlugin;

@@ -1,6 +1,6 @@
 import { Menu, TAbstractFile } from "obsidian";
-import ThePlugin from "./main";
-import { copy } from "./uilts";
+import ThePlugin from "main";
+import { copy } from "uilts";
 
 export default function addCopyPathMenu(plugin: ThePlugin) {
     plugin.registerEvent(

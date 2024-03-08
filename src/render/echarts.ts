@@ -1,7 +1,7 @@
 import ThePlugin from "main";
 import { DataArray } from "obsidian-dataview";
 import { DataviewInlineApi } from "obsidian-dataview/lib/api/inline-api";
-import { DFile } from "types";
+import { DFile } from "uiltsFunction/fileTools";
 
 export async function yearFileLine(
     year: number,
@@ -87,7 +87,7 @@ export async function monthFileLine(
     let f = files
         .filter((p) => p.date && p.date.year == year && p.date.month == month + 1)
         .groupBy((p) => p.date.day);
-    let group_files: any[][] = [];
+    let group_files: DataArray<any>[] = [];
     for (let i of f) {
         data[i.key - 1] = i.rows.length;
         group_files[i.key - 1] = i.rows;

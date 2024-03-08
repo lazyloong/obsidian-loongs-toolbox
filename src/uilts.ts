@@ -1,7 +1,10 @@
-import { Notice, TFile, getIcon } from "obsidian";
-import { MatchData } from "./editorSuggest/blockIdEditorSuggest";
+import { Notice, SearchResult, TAbstractFile, TFile, getIcon } from "obsidian";
 import sanitize from "sanitize-filename";
 import * as Path from "path";
+
+export interface MatchData extends SearchResult {
+    text: string;
+}
 
 export class SuggestionRenderer {
     containerEl: HTMLElement;
@@ -79,4 +82,13 @@ export function copy(text: string) {
         () => new Notice("已复制到剪贴板：" + text, 1000),
         () => new Notice("复制失败：" + text, 1000)
     );
+}
+
+export function getTAbstractFileByPathOrName(pathOrName: string): TAbstractFile {
+    let file = app.vault.getAbstractFileByPath(pathOrName);
+    if (!file)
+        file = app.vault
+            .getAllLoadedFiles()
+            .find((f) => f.name == pathOrName || (f as TFile)?.basename == pathOrName);
+    return file;
 }

@@ -1,6 +1,6 @@
 import { Setting, PluginSettingTab } from "obsidian";
-import ThePlugin, { auxiliaryPlugins } from "./main";
-import { WebDataType } from "./web/webParser";
+import ThePlugin, { auxiliaryPlugins } from "main";
+import { WebDataType } from "webParser";
 
 export default class TheSettingTab extends PluginSettingTab {
     plugin: ThePlugin;

@@ -1,6 +1,7 @@
 import { request } from "obsidian";
-import ThePlugin from "../main";
-import WebParser, { WebData } from "./webParser";
+import ThePlugin from "main";
+import { WebData } from ".";
+import WebParser from "./webParser";
 
 export default class ZhihuFavlist extends WebParser<WebData> {
     constructor(id: string, plugin: ThePlugin) {

@@ -5,17 +5,12 @@ import {
     EditorSuggest,
     EditorSuggestContext,
     EditorSuggestTriggerInfo,
-    SearchResult,
     TFile,
     fuzzySearch,
     prepareQuery,
 } from "obsidian";
 import ThePlugin from "main";
-import { SuggestionRenderer } from "uilts";
-
-export interface MatchData extends SearchResult {
-    text: string;
-}
+import { MatchData, SuggestionRenderer } from "uilts";
 
 export default class BlockIdEditorSuggest extends EditorSuggest<MatchData> {
     plugin: ThePlugin;

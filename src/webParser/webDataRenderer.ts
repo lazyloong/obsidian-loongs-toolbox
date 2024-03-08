@@ -1,7 +1,7 @@
 import { DataviewInlineApi } from "obsidian-dataview/lib/api/inline-api";
 import { DataviewApi } from "obsidian-dataview/lib/api/plugin-api";
-import { createFile } from "../uilts";
-import WebParser, { WebData } from "./webParser";
+import { createFile } from "uilts";
+import WebParser, { WebData } from ".";
 
 export default class Renderer<T extends WebData> {
     dv: DataviewInlineApi;
